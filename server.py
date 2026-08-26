@@ -49,6 +49,37 @@ HIST_LIMIT = 16
 SAFE_RPM = 25                # наш собственный предохранитель
 _rpm_window = [0.0, 0]
 
+# ---- кратковременная память о госте (sid -> имя/телефон) ----
+SESSIONS = {}
+SESSIONS_TTL = 2 * 3600  # 2 часа
+
+
+def _session_facts(sid: str) -> str:
+    f = SESSIONS.get(sid or "", {})
+    parts = []
+    if f.get("name"):
+        parts.append(f"имя: {f['name']}")
+    if f.get("phone"):
+        parts.append(f"телефон: {f['phone']}")
+    if not parts:
+        return ""
+    return ("\n[ИЗВЕСТНО О ГОСТЕ — гость сообщал это ранее в этом визите: "
+            + ", ".join(parts)
+            + ". НЕ переспрашивай эти данные ни при брони, ни при празднике — "
+              "подставляй их сам, в том числе в [ЗАЯВКА].]")
+
+
+def _remember(sid: str, **kv):
+    if not sid:
+        return
+    rec = SESSIONS.setdefault(sid, {})
+    rec.update({k: v for k, v in kv.items() if v})
+    rec["_t"] = time.time()
+    now = time.time()
+    for k in list(SESSIONS):
+        if now - SESSIONS[k].get("_t", 0) > SESSIONS_TTL:
+            SESSIONS.pop(k, None)
+
 
 # --- лечение «CERTIFICATE_VERIFY_FAILED» на маках с Python от python.org ---
 _CTX_OK = ssl.create_default_context()
@@ -233,6 +264,7 @@ class Handler(BaseHTTPRequestHandler):
         if _rpm_window[1] > SAFE_RPM:
             return self._json({"fallback": True, "reason": "rate_limited"})
 
+        sid = str(payload.get("sid") or "")[:64]
         prompt = load_prompt()
         # подставляем сегодняшнюю дату (Алматы, UTC+5) — чтобы AI понимал «завтра» и «в выходные»
         days_ru = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
@@ -241,6 +273,7 @@ class Handler(BaseHTTPRequestHandler):
                  f"{days_ru[t.tm_wday]}")
         prompt += (f"\n\n[СИСТЕМА: сегодня {today}. Все относительные даты "
                    f"(«завтра», «в выходные») считай от этой даты и пиши конкретно: дд.мм.]")
+        prompt += _session_facts(sid)
 
         # ---- пробуем провайдеров по цепочке, пока кто-то не ответит ----
         last_reason = "all_failed"
@@ -278,10 +311,12 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(("data: " + json.dumps(obj, ensure_ascii=False) + "\n\n").encode())
             self.wfile.flush()
 
+        full_text = first
         try:
             emit({"t": first})
             for chunk in stream:
                 emit({"t": chunk})
+                full_text += chunk
         except (BrokenPipeError, ConnectionResetError):
             return
         except Exception as e:
@@ -289,6 +324,14 @@ class Handler(BaseHTTPRequestHandler):
                 emit({"err": str(e)[:120]})
             except Exception:
                 pass
+        finally:
+            m = re.search(r"\[ЗАЯВКА\]([\s\S]*?)\[/ЗАЯВКА\]", full_text)
+            if m:
+                try:
+                    b = json.loads(m.group(1))
+                    _remember(sid, name=b.get("name"), phone=b.get("phone"))
+                except Exception:
+                    pass
         try:
             emit("[DONE]")
         except Exception:
