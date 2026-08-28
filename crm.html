@@ -37,6 +37,7 @@
   .b-new{background:#FCF3E3;color:var(--amber);border:1px solid #E8D5B0}
   .b-ok{background:#EAF6EC;color:var(--green);border:1px solid #B7DCBF}
   .b-no{background:#F5E8E6;color:var(--red);border:1px solid #E3C2BD;text-decoration:line-through}
+  .b-done{background:#EEF3FA;color:#3A5A8C;border:1px solid #C4D3E8}
   .acts button{border:none;border-radius:18px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-left:5px}
   .ok{background:#EAF6EC;color:var(--green);border:1px solid #B7DCBF}
   .no{background:#F5E8E6;color:var(--red);border:1px solid #E3C2BD}
@@ -156,7 +157,7 @@ function render(all){
   if(!list.length){ el.innerHTML = '<div class="card"><div class="empty">Пока пусто — заявки с сайта появляются здесь автоматически</div></div>'; return; }
 
   el.innerHTML = list.map(b=>{
-    const cls = b.status==='подтверждена'?'b-ok':(b.status==='отменена'?'b-no':'b-new');
+    const cls = b.status==='подтверждена'?'b-ok':(b.status==='отменена'?'b-no':(b.status==='посетил'?'b-done':'b-new'));
     return `<div class="card"><div class="row">
       <div class="when"><div class="d">${b.date}</div><div class="t">${b.slot}</div></div>
       <div class="who">
@@ -166,7 +167,9 @@ function render(all){
       <div class="side">
         <span class="badge ${cls}">${b.status}</span><br>
         ${b.status==='новая'?`<button class="ok" onclick="setStatus(${b.id},'подтверждена')">✓ Подтвердить</button>`:''}
-        ${b.status!=='отменена'?`<button class="no" onclick="setStatus(${b.id},'отменена')">✕ Отменить</button>`:''}
+        ${b.status!=='отменена'&&b.status!=='посетил'?`<button class="no" onclick="setStatus(${b.id},'отменена')">✕ Отменить</button>`:''}
+        ${b.status!=='посетил'?`<button class="ok" style="background:#F2E9DB;color:#A26F2B;border:1px solid #E3D5BC" onclick="setStatus(${b.id},'посетил')">🍽 Был в кафе</button>`:''}
+        <button class="no" style="background:#fff;border:1px solid #E3C2BD;color:#B03A2E" onclick="del(${b.id})">🗑 Удалить</button>
       </div>
     </div></div>`;
   }).join('');
@@ -177,6 +180,12 @@ function esc(s){ return String(s||'').replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&g
 async function setStatus(id, status){
   await fetch('/api/bookings', {method:'PATCH', headers:{'Content-Type':'application/json','X-CRM-PIN':PIN},
     body: JSON.stringify({id, status})});
+  load();
+}
+
+async function del(id){
+  if(!confirm('Удалить бронь #' + id + ' навсегда?\n(для завершённого визита лучше «🍽 Был в кафе» — запись останется в статистике)')) return;
+  await fetch('/api/bookings', {method:'DELETE', headers:{'X-CRM-PIN':PIN, 'Booking-Id': id}});
   load();
 }
 

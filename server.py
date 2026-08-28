@@ -403,6 +403,25 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": True, "booking": rec})
         return self._json({"ok": False, "error": "not_found"}, 404)
 
+    def do_DELETE(self):
+        if self.path.split("?")[0] != "/api/bookings":
+            return self.send_error(404)
+        if self.headers.get("X-CRM-PIN") != CRM_PIN:
+            return self._json({"ok": False, "error": "bad_pin"}, 403)
+        try:
+            bid = int(self.headers.get("Booking-Id", "0"))
+        except ValueError:
+            return self._json({"ok": False, "error": "bad_id"}, 400)
+        with _DB_LOCK:
+            db = _load_db()
+            before = len(db["bookings"])
+            db["bookings"] = [b for b in db["bookings"] if b["id"] != bid]
+            if len(db["bookings"]) == before:
+                return self._json({"ok": False, "error": "not_found"}, 404)
+            _save_db(db)
+        print(f"[CRM] -бронь #{bid} удалена")
+        return self._json({"ok": True})
+
     # ---------- чат ----------
     def _chat(self):
         try:
