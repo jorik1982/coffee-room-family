@@ -90,7 +90,7 @@
       <input id="aName" placeholder="Имя">
       <input id="aPhone" placeholder="Телефон">
       <select id="aBranch"><option>ул. Бауыржана Момышулы, 11</option><option>ул. Мангелик Ел, 14</option></select>
-      <input id="aDate" placeholder="дд.мм">
+      <input id="aDate" placeholder="дд.мм 📅" title="Нажмите — откроется календарь">
       <input id="aTime" placeholder="19:00">
       <input id="aGuests" placeholder="Гостей">
     </div>
@@ -106,7 +106,10 @@
   <div id="list"></div>
 </div>
 
+<script src="datepicker.js"></script>
 <script>
+attachDatepicker(document.getElementById('aDate'));
+
 let PIN = localStorage.getItem('crm_pin') || '';
 let FILTER = 'today';
 const todayStr = () => new Date().toLocaleDateString('ru-RU').slice(0,5);

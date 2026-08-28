@@ -515,7 +515,7 @@
             </div>
           </div>
           <div class="f-row">
-            <div><label for="fDate">Дата</label><input id="fDate" type="date" required></div>
+            <div><label for="fDate">Дата (нажмите — откроется календарь)</label><input id="fDate" required placeholder="дд.мм 📅"></div>
             <div><label for="fTime">Время</label><input id="fTime" type="time" required value="19:00"></div>
           </div>
           <div class="f-full"><label for="fNote">Пожелания</label><textarea id="fNote" rows="2" placeholder="Веранда, детский стульчик, торт..."></textarea></div>
@@ -619,7 +619,11 @@
   </div>
 </footer>
 
+<script src="datepicker.js"></script>
 <script>
+  // Календарь на поле даты
+  attachDatepicker(document.getElementById('fDate'));
+
   // Хедер при скролле
   const header=document.getElementById('header');
   addEventListener('scroll',()=>header.classList.toggle('scrolled',scrollY>40));
@@ -651,6 +655,12 @@
       `Дата: ${v('fDate')}\nВремя: ${v('fTime')}\nГостей: ${v('fGuests')}\n`+
       (v('fNote')?`Пожелания: ${v('fNote')}\n`:'')+`\nЗаявка с сайта.`);
     document.getElementById('success').style.display='block';
+    // сохраняем заявку в CRM (для менеджера), затем открываем WhatsApp
+    try{
+      fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({source:'форма',name:v('fName'),phone:v('fPhone'),
+          branch:v('fBranch'),date:v('fDate'),time:v('fTime'),guests:v('fGuests'),note:v('fNote')})});
+    }catch(e){}
     setTimeout(()=>{window.open('https://wa.me/77023497570?text='+text,'_blank')},700);
   });
 
