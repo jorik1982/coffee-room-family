@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM · Coffee Room Family — бронирования</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232B2117'/%3E%3Cpath d='M18 26h22v10a10 10 0 0 1-10 10h-2a10 10 0 0 1-10-10V26z' fill='%23C08A3E'/%3E%3C/svg%3E">
+<style>
+  :root{--cream:#FAF5EE;--ink:#2B2117;--muted:#8A7A68;--caramel:#C08A3E;--dark:#A26F2B;
+    --line:#EADFCF;--green:#2E7D4F;--red:#B03A2E;--amber:#B47B33}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+  header{background:var(--ink);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+  header h1{font-size:17px;font-family:Georgia,serif}
+  header .sub{font-size:12px;opacity:.65}
+  header .spacer{flex:1}
+  header button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 14px;font-size:12.5px;cursor:pointer}
+  header button:hover{background:rgba(255,255,255,.22)}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px 16px 60px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+  .stat b{font-size:24px;font-family:Georgia,serif;color:var(--dark);display:block}
+  .stat span{font-size:12px;color:var(--muted)}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:8px 16px;border-radius:22px;border:1.5px solid var(--line);background:#fff;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .tab.active{background:var(--caramel);border-color:var(--caramel);color:#fff}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:12px}
+  .row{display:grid;grid-template-columns:86px 1fr auto;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center}
+  .row:last-child{border-bottom:none}
+  .when{text-align:center}
+  .when .d{font-weight:800;font-size:14.5px}
+  .when .t{font-size:18px;font-weight:800;color:var(--dark);font-family:Georgia,serif}
+  .who b{font-size:14.5px}
+  .who div{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .side{text-align:right}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;margin-bottom:6px}
+  .b-new{background:#FCF3E3;color:var(--amber);border:1px solid #E8D5B0}
+  .b-ok{background:#EAF6EC;color:var(--green);border:1px solid #B7DCBF}
+  .b-no{background:#F5E8E6;color:var(--red);border:1px solid #E3C2BD;text-decoration:line-through}
+  .acts button{border:none;border-radius:18px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-left:5px}
+  .ok{background:#EAF6EC;color:var(--green);border:1px solid #B7DCBF}
+  .no{background:#F5E8E6;color:var(--red);border:1px solid #E3C2BD}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
+  .add{background:#fff;border:1px dashed var(--caramel);border-radius:14px;padding:14px;margin-bottom:16px}
+  .add h3{font-size:14px;margin-bottom:10px;color:var(--dark)}
+  .add .f{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .add input,.add select{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13.5px;font-family:inherit;background:#FDFBF7}
+  .add button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;background:var(--caramel);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+  .gate{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:50}
+  .gate .box{background:#fff;border-radius:18px;padding:30px 26px;width:min(340px,90vw);text-align:center}
+  .gate h2{font-family:Georgia,serif;margin-bottom:6px}
+  .gate p{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .gate input{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:22px;text-align:center;letter-spacing:8px;margin-bottom:12px}
+  .gate button{width:100%;padding:12px;border:none;border-radius:10px;background:var(--caramel);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+  .err{color:var(--red);font-size:12.5px;margin-top:8px;display:none}
+  @media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}.add .f{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:70px 1fr}.side{grid-column:1/-1;text-align:left;margin-top:4px}}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="box">
+    <h2>CRM · Coffee Room</h2>
+    <p>Введите PIN-код менеджера</p>
+    <input type="password" id="pin" maxlength="8" inputmode="numeric" placeholder="••••">
+    <button onclick="login()">Войти</button>
+    <div class="err" id="err">Неверный PIN</div>
+  </div>
+</div>
+
+<header>
+  <h1>☕ CRM · Coffee Room Family</h1>
+  <span class="sub">бронирования · обновляется автоматически</span>
+  <span class="spacer"></span>
+  <button onclick="load()">↻ Обновить</button>
+  <button onclick="logout()">Выйти</button>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b id="stToday">0</b><span>броней сегодня</span></div>
+    <div class="stat"><b id="stGuests">0</b><span>гостей ожидается</span></div>
+    <div class="stat"><b id="stNew">0</b><span>новых (не подтверждено)</span></div>
+    <div class="stat"><b id="stEvening">—</b><span>вечер 19:00–21:00</span></div>
+  </div>
+
+  <div class="add">
+    <h3>＋ Добавить бронь вручную (например, позвонили по телефону)</h3>
+    <div class="f">
+      <input id="aName" placeholder="Имя">
+      <input id="aPhone" placeholder="Телефон">
+      <select id="aBranch"><option>ул. Бауыржана Момышулы, 11</option><option>ул. Мангелик Ел, 14</option></select>
+      <input id="aDate" placeholder="дд.мм">
+      <input id="aTime" placeholder="19:00">
+      <input id="aGuests" placeholder="Гостей">
+    </div>
+    <button onclick="addManual()">Сохранить бронь</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-f="today">Сегодня</button>
+    <button class="tab" data-f="tomorrow">Завтра</button>
+    <button class="tab" data-f="all">Все</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+let PIN = localStorage.getItem('crm_pin') || '';
+let FILTER = 'today';
+const todayStr = () => new Date().toLocaleDateString('ru-RU').slice(0,5);
+const tomStr = () => new Date(Date.now()+864e5).toLocaleDateString('ru-RU').slice(0,5);
+
+if (PIN) { document.getElementById('gate').style.display='none'; load(); setInterval(load, 30000); }
+
+function login(){
+  PIN = document.getElementById('pin').value.trim();
+  fetch('/api/bookings-list', {method:'POST', headers:{'Content-Type':'application/json','X-CRM-PIN':PIN}, body:'{}'})
+  .then(r=>{ if(r.status===403) throw 0; return r.json(); })
+  .then(()=>{ localStorage.setItem('crm_pin',PIN); document.getElementById('gate').style.display='none'; load(); setInterval(load,30000); })
+  .catch(()=>{ document.getElementById('err').style.display='block'; });
+}
+function logout(){ PIN=''; localStorage.removeItem('crm_pin'); location.reload(); }
+
+async function load(){
+  try{
+    const r = await fetch('/api/bookings-list', {method:'POST',
+      headers:{'Content-Type':'application/json','X-CRM-PIN':PIN}, body:'{}'});
+    if(r.status===403){ logout(); return; }
+    const d = await r.json();
+    render(d.bookings||[]);
+  }catch(e){}
+}
+
+function render(all){
+  // статистика
+  const act = all.filter(b=>b.status!=='отменена');
+  document.getElementById('stToday').textContent = act.filter(b=>b.date===todayStr()).length;
+  document.getElementById('stNew').textContent = all.filter(b=>b.status==='новая').length;
+  const g = act.filter(b=>b.date===todayStr()).map(b=>parseInt(b.guests)||0).reduce((a,b)=>a+b,0);
+  document.getElementById('stGuests').textContent = g;
+  const ev = act.filter(b=>b.date===todayStr() && ['19:00','20:00'].includes(b.slot)).length;
+  document.getElementById('stEvening').textContent = ev + '/' + (2*6);
+
+  // фильтр
+  let list = all;
+  if(FILTER==='today') list = all.filter(b=>b.date===todayStr());
+  if(FILTER==='tomorrow') list = all.filter(b=>b.date===tomStr());
+  list.sort((a,b)=> (a.date+b.slot).localeCompare(b.date+b.slot));
+
+  const el = document.getElementById('list');
+  if(!list.length){ el.innerHTML = '<div class="card"><div class="empty">Пока пусто — заявки с сайта появляются здесь автоматически</div></div>'; return; }
+
+  el.innerHTML = list.map(b=>{
+    const cls = b.status==='подтверждена'?'b-ok':(b.status==='отменена'?'b-no':'b-new');
+    return `<div class="card"><div class="row">
+      <div class="when"><div class="d">${b.date}</div><div class="t">${b.slot}</div></div>
+      <div class="who">
+        <b>#${b.id} · ${esc(b.name)}</b> <span style="color:var(--muted);font-size:12px">· ${esc(b.kind)} · из ${esc(b.source)}</span>
+        <div>${b.phone?'📞 '+esc(b.phone)+'<br>':''}📍 ${esc(b.branch)} · 👥 ${esc(b.guests)} чел.${b.prefs?'<br>💬 '+esc(b.prefs):''}</div>
+      </div>
+      <div class="side">
+        <span class="badge ${cls}">${b.status}</span><br>
+        ${b.status==='новая'?`<button class="ok" onclick="setStatus(${b.id},'подтверждена')">✓ Подтвердить</button>`:''}
+        ${b.status!=='отменена'?`<button class="no" onclick="setStatus(${b.id},'отменена')">✕ Отменить</button>`:''}
+      </div>
+    </div></div>`;
+  }).join('');
+}
+
+function esc(s){ return String(s||'').replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+async function setStatus(id, status){
+  await fetch('/api/bookings', {method:'PATCH', headers:{'Content-Type':'application/json','X-CRM-PIN':PIN},
+    body: JSON.stringify({id, status})});
+  load();
+}
+
+async function addManual(){
+  const v = id => document.getElementById(id).value.trim();
+  if(!v('aName')||!v('aDate')||!v('aTime')){ alert('Заполните имя, дату и время'); return; }
+  await fetch('/api/bookings', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({pin:PIN, source:'CRM', kind:'столик',
+      name:v('aName'), phone:v('aPhone'), branch:v('aBranch'),
+      date:v('aDate'), time:v('aTime'), guests:v('aGuests')||'-'})});
+  ['aName','aPhone','aDate','aTime','aGuests'].forEach(id=>document.getElementById(id).value='');
+  load();
+}
+
+document.querySelectorAll('#tabs .tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); FILTER=t.dataset.f; load();
+});
+</script>
+</body>
+</html>
